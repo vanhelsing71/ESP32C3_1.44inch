@@ -14,7 +14,7 @@
 #include <HTTPClient.h>
 //创建wifi的udp服务的库
 #include <WiFiUdp.h>
-//静态存储区,用于存储一些固定参数
+//Static storage area, used to store some fixed parameters
  #include <EEPROM.h>
 
 #include <Arduino.h>
@@ -39,8 +39,8 @@
 
 
 //此处添加WIFI信息或者个人热点WLAN信息
-const char *ssid     = "apo";  //Wifi名字 
-const char *password = "1234567890"; //Wifi密码 
+const char *ssid     = "spotpear";  //Wifi名字 
+const char *password = "12345678"; //Wifi密码 
 
 // const char *ssid     = "spotpear";  //Wifi名字 
 // const char *password = "12345678"; //Wifi密码 
@@ -102,7 +102,7 @@ float timeZone;     //时区
 
 
 
-static String cityCode = "";  //如果需要改为 手动添加城市信息 则在""内填写城市的名字，然后将第218行代码注释掉即可
+static String cityCode = "Napoli";  //If you need to add city information manually, fill in the name of the city in "", and then comment out the 218th line of code.
 char* api_key = "fbf5a0e942e6fea3ff18103b9fd46ed9"; //API 密钥
 
 
@@ -117,16 +117,16 @@ void printDigits(int digits);
 String num2str(int digits);
 void sendNTPpacket(IPAddress &address);
 
-byte setNTPSyncTime = 20; //设置NTP时间同步频率，10分钟同步一次
+byte setNTPSyncTime = 20; //Set NTP time synchronization frequency, synchronize once every 10 minutes
 
 int backLight_hour=0;
 
-time_t prevDisplay = 0; // 显示时间
+time_t prevDisplay = 0; // display time
 
 
 //-----------------------------------------
 
-//----------------------温湿度等参数------------------
+//----------------------Temperature and humidity and other parameters------------------
 unsigned long wdsdTime = 0;
 byte wdsdValue = 0;
 String wendu1 = "",wendu2 = "",shidu = "",yaqiang = "",tianqi = "",kjd = "";
@@ -194,8 +194,8 @@ void tkr(void)
 }
 
 
-//-----------------------------------城市代码获取及展示
-//获取城市信息ID
+//-----------------------------------City code acquisition and display
+//Get city information ID based from the IP address
 void getCityCode() {
  
 String URL = "http://ip-api.com/json/?fields=city,lat,lon";
@@ -204,7 +204,7 @@ HTTPClient httpClient;
 httpClient.begin(wificlient,URL);
 
 
-//启动连接并发送HTTP请求
+//Start a connection and send an HTTP request
   int httpCode = httpClient.GET();
   Serial.print("Send GET request to URL: ");
   Serial.println(URL);
@@ -215,7 +215,7 @@ httpClient.begin(wificlient,URL);
     deserializeJson(doc,httpClient.getString());
     String city = doc["city"];
 
-    cityCode=city; //获取当地城市ID
+    //cityCode=city; //Get local city ID commented because we have cabled the city at row 105
   }
 
   httpClient.end();
@@ -239,9 +239,9 @@ void getCityTime(){
       long timezone1 = doc["timezone"]; //获取时区信息
       timeZone=(float)(timezone1/3600);
 
-      Serial.println("获取城市信息成功");
+      Serial.println("Obtained city information successfully");
    }else {
-    Serial.println("获取城市信息失败");
+    Serial.println("Failed to obtain city information");
     Serial.print(httpCode);
   }
   httpClient.end();
@@ -249,12 +249,12 @@ void getCityTime(){
 
 int temp_i1,temp_i2;
  String scrollText[5];
-// 获取城市天气 fc_24_en  1694222530090  401070101 fbf5a0e942e6fea3ff18103b9fd46ed9
+// Get city weather fc_24_en  1694222530090  401070101 fbf5a0e942e6fea3ff18103b9fd46ed9
 void getCityWeater(){
 
   float temp_f,temp_min_f,temp_max_f;
   getCityCode();
-  String URL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityCode + "&appid=" + String(api_key) + "&units=metric"; //524901
+  String URL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityCode + "&appid=" + String(api_key) + "&units=metric&lang=it"; //524901
  
   //创建 HTTPClient 对象
  HTTPClient httpClient;
@@ -262,7 +262,7 @@ void getCityWeater(){
 
 
   int httpCode = httpClient.GET();
-  Serial.println("正在获取天气数据");
+  Serial.println("Getting weather data");
   Serial.println(URL);
 
   //如果服务器响应OK则从服务器获取响应体信息并通过串口输出
@@ -281,6 +281,7 @@ void getCityWeater(){
     String icon = doc["weather"][0]["icon"];
     float temp_min = doc["main"]["temp_min"];
     float temp_max = doc["main"]["temp_max"];
+    float temp_perc = doc["main"]["feels_like"];
     int visibility = doc["visibility"];
     
     temp_f = 32 + temp*1.8;
@@ -337,17 +338,18 @@ void getCityWeater(){
   clk.deleteSprite();
   clk.unloadFont();
 
-  scrollText[0] = "MIN T "+String(temp_min_f)+ "℉ / "+String(temp_min)+"℃";
-  scrollText[1] = "MAX T "+String(temp_max_f)+ "℉ / "+String(temp_max)+"℃";
-  scrollText[2] = "Weather "+String(tianqi);
-  scrollText[3] = "pressure "+String(yaqiang)+"hPa";
-  scrollText[4] = "visibility "+String(kjd)+"km";
+  scrollText[0] = "T Min: " + String(temp_min) + "℃";
+  scrollText[1] = "T Max: " + String(temp_max) + "℃";
+  scrollText[2] = "Percepita: " + String(temp_perc) + "℃";
+  scrollText[3] = "Meteo: " + String(tianqi);
+  scrollText[4] = "Pressione: " + String(yaqiang) + "hPa";
+  scrollText[5] = "Visibilita': " + String(kjd) + "km";
   wrat.printfweather1(1,47,icon);
 
-  Serial.println("获取成功");
+  Serial.println("get success");
 
   } else {
-    Serial.println("请求城市天气错误：");
+    Serial.println("Request city weather error：");
     Serial.print(httpCode);
   }
 
@@ -355,52 +357,38 @@ void getCityWeater(){
   httpClient.end();
 }
 
-//---------------- 温湿度轮播显示------------------------------------------
+//---------------- Temperature and humidity carousel display ------------------------------------------
 
-void weatherWarning() { //间隔5秒切换显示温度和湿度，该数据为气象站获取的室外参数
+void weatherWarning() { //Switches to display temperature and humidity every 5 seconds. This data is the outdoor parameter obtained by the weather station.
   if(millis() - wdsdTime > 5000) {
     wdsdValue = wdsdValue + 1;
     //Serial.println("wdsdValue0" + String(wdsdValue));
     clk.setColorDepth(8);
     clk.loadFont(ALBB10);
-    switch(wdsdValue) {
+    switch(wdsdValue) {    
       case 1:
       //Serial.println("wdsdValue1" + String(wdsdValue));
-        TJpgDec.drawJpg(82,89,temperature, sizeof(temperature));  //温度图标
+        TJpgDec.drawJpg(82,89,temperature, sizeof(temperature));  //temperature icon
         for(int i=20;i>0;i--) {
           clk.createSprite(30,16);
           clk.fillSprite(bgColor);
           clk.setTextDatum(ML_DATUM);
           clk.setTextColor(thfontColor, bgColor);
-          clk.drawString(wendu1+"℉",1,i+8); //AW wendu+
+          clk.drawString(wendu2 + "℃",1,i+8); //AW wendu+
           clk.pushSprite(98,89);
           clk.deleteSprite();
           delay(10);
         }
         break;
       case 2:
-      //Serial.println("wdsdValue1" + String(wdsdValue));
-        TJpgDec.drawJpg(82,89,temperature, sizeof(temperature));  //温度图标
-        for(int i=20;i>0;i--) {
-          clk.createSprite(30,16);
-          clk.fillSprite(bgColor);
-          clk.setTextDatum(ML_DATUM);
-          clk.setTextColor(thfontColor, bgColor);
-          clk.drawString(wendu2+"℃",1,i+8); //AW wendu+
-          clk.pushSprite(98,89);
-          clk.deleteSprite();
-          delay(10);
-        }
-        break;
-      case 3:
       //Serial.println("wdsdValue2" + String(wdsdValue));
-        TJpgDec.drawJpg(82,89,humidity, sizeof(humidity));  //湿度图标
+        TJpgDec.drawJpg(82,89,humidity, sizeof(humidity));  //Humidity icon
         for(int i=20;i>0;i--) {
           clk.createSprite(30, 16);
           clk.fillSprite(bgColor);
           clk.setTextDatum(ML_DATUM);
           clk.setTextColor(thfontColor, bgColor);
-          clk.drawString(shidu+"%",1,i+8);
+          clk.drawString(shidu + "%",1,i+8);
           clk.pushSprite(98,89);
           clk.deleteSprite();
           delay(10);
@@ -434,7 +422,7 @@ void scrollBanner(){
       clkb.deleteSprite();
       clkb.unloadFont();
 
-      if(currentIndex>=4){
+      if(currentIndex >= 4){
         currentIndex = 0;  //回第一个
       }else{
         currentIndex += 1;  //准备切换到下一个
@@ -489,7 +477,7 @@ void loading(byte delayTime)//绘制进度条
 
 void get_wifi()
 {
-    Serial.begin(115200);
+    //Serial.begin(9600); commented because we already did that in setup
   // 连接网络
   WiFi.begin(ssid, password);
   //等待wifi连接
@@ -509,9 +497,11 @@ void get_wifi()
 void setup() {
 
          tkr();
-         Serial.begin(115200);
+         Serial.begin(9600);
          EEPROM.begin(1024);
-
+ 
+         while (!Serial)  // Wait for the serial connection to be establised.
+           delay(50);
 
 
          tft.begin(); /* TFT init */
@@ -544,7 +534,7 @@ void setup() {
 
           targetTime = millis() + 1000;
           get_wifi();
-          Serial.print("正在连接WIFI ");
+          Serial.print("Connecting to WIFI ");
           // Serial.println(ssid);
           //WiFi.begin(ssid,password);
 
@@ -595,7 +585,7 @@ void setup() {
           // tft.drawFastVLine(32,88,18,xkColor);
           tft.drawFastVLine(78,88,18,xkColor);
 
-          tft.drawFastVLine(40,106,20,xkColor);
+          tft.drawFastVLine(50,106,20,xkColor);
           tft.drawFastHLine(0,127,128,xkColor);
           
           getCityWeater();
@@ -668,11 +658,11 @@ void digitalClockDisplay()
   clk.setTextDatum(ML_DATUM);
   clk.setTextColor(weekfontColor, bgColor);
   clk.drawString(week(),1,8);
-  clk.pushSprite(45,108); // 字体的位置
+  clk.pushSprite(55,108); // 字体的位置
   clk.deleteSprite();
 
   // 月日
-  clk.createSprite(30,16);//框的大小
+  clk.createSprite(40,16);//框的大小
   clk.fillSprite(bgColor);
   clk.setTextDatum(ML_DATUM);
   clk.setTextColor(monthfontColor, bgColor);
@@ -687,15 +677,15 @@ void digitalClockDisplay()
 
 //星期
 String week(){
-  String wk[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+  String wk[7] = {"Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"};
   String s = wk[weekday()-1];
   return s;
 }
 
 //月日
 String monthDay(){
-  String s = String(month());
-  s = s + " - " + day();
+  String s =  String(day());
+  s = s + "/" + month();
   return s;
 }
 //时分
@@ -753,7 +743,7 @@ time_t getNtpTime()
   while (millis() - beginWait < 1500) {
     int size = Udp.parsePacket();
     if (size >= NTP_PACKET_SIZE) {
-      Serial.println("NTP同步成功");
+      Serial.println("NTP synchronization successful");
       Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
       unsigned long secsSince1900;
       // convert four bytes starting at location 40 to a long integer
@@ -765,8 +755,8 @@ time_t getNtpTime()
       return secsSince1900 - 2208988800UL + timeZone * SECS_PER_HOUR;
     }
   }
-  //ESP.restart(); //时间获取失败直接重启
-  Serial.println("NTP同步失败");
+  //ESP.restart(); //Restart directly if time acquisition fails
+  Serial.println("NTP synchronization failed");
   return 0; // 无法获取时间时返回0
 }
 

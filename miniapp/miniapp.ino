@@ -248,7 +248,7 @@ void getCityTime(){
 }
 
 int temp_i1,temp_i2;
- String scrollText[5];
+ String scrollText[6];
 // Get city weather fc_24_en  1694222530090  401070101 fbf5a0e942e6fea3ff18103b9fd46ed9
 void getCityWeater(){
 
@@ -365,7 +365,7 @@ void weatherWarning() { //Switches to display temperature and humidity every 5 s
     //Serial.println("wdsdValue0" + String(wdsdValue));
     clk.setColorDepth(8);
     clk.loadFont(ALBB10);
-    switch(wdsdValue) {    
+    switch(wdsdValue) {
       case 1:
       //Serial.println("wdsdValue1" + String(wdsdValue));
         TJpgDec.drawJpg(82,89,temperature, sizeof(temperature));  //temperature icon

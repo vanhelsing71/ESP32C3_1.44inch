@@ -10,6 +10,7 @@
 #include <TimeLib.h>
 //wifi库
 #include <WiFi.h>
+
 //http请求库
 #include <HTTPClient.h>
 //创建wifi的udp服务的库
@@ -42,10 +43,6 @@
 const char *ssid     = "spotpear";  //Wifi名字 
 const char *password = "12345678"; //Wifi密码 
 
-// const char *ssid     = "spotpear";  //Wifi名字 
-// const char *password = "12345678"; //Wifi密码 
-
-
 
 WeatherNum  wrat; //天气对象
 int prevTime = 0;
@@ -60,9 +57,9 @@ uint16_t bgColor =0x0000 ;
 //字体颜色
 
 //时间小时分钟字体颜色
-uint16_t timehmfontColor =0xFFFF ;
+uint16_t timehmfontColor =0x0F0F ;
 //时间秒字体颜色
-uint16_t timesfontColor =0xFFFF ;
+uint16_t timesfontColor =0x0F0F ;
 //星期字体颜色
 uint16_t weekfontColor =0xFFFF ;
 //日月字体颜色
@@ -97,9 +94,9 @@ static lv_color_t buf[screenHeight * screenWidth / 10];
 
 //时钟部分参数---------------------------------
 //NTP服务器
-static const char ntpServerName[] = "time.nist.gov"; //NTP服务器
+//static const char ntpServerName[] = "time.nist.gov"; //NTP服务器
+static const char ntpServerName[] = "ntp2.inrim.it";
 float timeZone;     //时区
-
 
 
 static String cityCode = "Napoli";  //If you need to add city information manually, fill in the name of the city in "", and then comment out the 218th line of code.
@@ -129,7 +126,7 @@ time_t prevDisplay = 0; // display time
 //----------------------Temperature and humidity and other parameters------------------
 unsigned long wdsdTime = 0;
 byte wdsdValue = 0;
-String wendu1 = "",wendu2 = "",shidu = "",yaqiang = "",tianqi = "",kjd = "";
+String wendu1 = "", wendu2 = "", shidu = "", yaqiang = "", tianqi = "", kjd = "";
 
 //----------------------------------------------------
 
@@ -137,7 +134,7 @@ LV_IMG_DECLARE(TKR_A);
 static lv_obj_t *logo_imga = NULL;
 
 
-TFT_eSPI tft = TFT_eSPI(128,128);  // 引脚请自行配置tft_espi库中的 User_Setup.h文件
+TFT_eSPI tft = TFT_eSPI(128, 128);  // Please configure the pins yourself in the User_Setup.h file in the tft_espi library.
 TFT_eSprite clk = TFT_eSprite(&tft);
 
 
@@ -214,8 +211,8 @@ httpClient.begin(wificlient,URL);
     DynamicJsonDocument doc(1024);
     deserializeJson(doc,httpClient.getString());
     String city = doc["city"];
-
-    //cityCode=city; //Get local city ID commented because we have cabled the city at row 105
+    Serial.println("Detected city: " + city);
+    //cityCode=city; //Get local city ID commented because we have hardcoded the city at row 105
   }
 
   httpClient.end();
@@ -422,7 +419,7 @@ void scrollBanner(){
       clkb.deleteSprite();
       clkb.unloadFont();
 
-      if(currentIndex >= 4){
+      if(currentIndex >= 5){
         currentIndex = 0;  //回第一个
       }else{
         currentIndex += 1;  //准备切换到下一个
@@ -500,17 +497,17 @@ void setup() {
          Serial.begin(9600);
          EEPROM.begin(1024);
  
-         while (!Serial)  // Wait for the serial connection to be establised.
-           delay(50);
+         //while (!Serial)  // Wait for the serial connection to be establised.
+         //  delay(50);
 
 
          tft.begin(); /* TFT init */
-         tft.invertDisplay(0);//反转所有显示颜色：1反转，0正常
+         tft.invertDisplay(0);//Invert all display colors: 1 to invert, 0 to normal
          tft.fillScreen(0x0000);
          tft.setTextColor(TFT_WHITE, 0x0000);
-         // 设置屏幕显示的旋转角度，参数为：0, 1, 2, 3
-        // 分别代表 0°、90°、180°、270°
-        //根据实际需要旋转
+         //Set the rotation angle of the screen display, the parameter is：0, 1, 2, 3
+        // Representing 0°、90°、180°、270°
+        //Rotate according to actual needs
           tft.setRotation(2);
 
 
@@ -585,7 +582,7 @@ void setup() {
           // tft.drawFastVLine(32,88,18,xkColor);
           tft.drawFastVLine(78,88,18,xkColor);
 
-          tft.drawFastVLine(50,106,20,xkColor);
+          tft.drawFastVLine(60,106,20,xkColor); //line of dayweek - must be -5 of line 661
           tft.drawFastHLine(0,127,128,xkColor);
           
           getCityWeater();
@@ -600,7 +597,7 @@ void loop() {
                 digitalClockDisplay();
               }
 
-             if(millis() - weaterTime > 300000){ //5分钟更新一次天气
+             if(millis() - weaterTime > 300000){ //Weather updated every 5 minutes
                 weaterTime = millis();
                 getCityWeater();
                 // get_Bstation_follow();
@@ -623,8 +620,8 @@ void digitalClockDisplay()
 
   clk.setColorDepth(8);
 
-  /***中间时间区***/
-  //时分
+  /***Intermediate time zone***/
+  //hour and minute
   clk.createSprite(75, 28);
   clk.fillSprite(bgColor);
   clk.loadFont(FxLED_32);
@@ -658,11 +655,11 @@ void digitalClockDisplay()
   clk.setTextDatum(ML_DATUM);
   clk.setTextColor(weekfontColor, bgColor);
   clk.drawString(week(),1,8);
-  clk.pushSprite(55,108); // 字体的位置
+  clk.pushSprite(65,108); // 字体的位置 first number must be +5 of line 588
   clk.deleteSprite();
 
   // 月日
-  clk.createSprite(40,16);//框的大小
+  clk.createSprite(50,16);//box size
   clk.fillSprite(bgColor);
   clk.setTextDatum(ML_DATUM);
   clk.setTextColor(monthfontColor, bgColor);
@@ -677,15 +674,17 @@ void digitalClockDisplay()
 
 //星期
 String week(){
-  String wk[7] = {"Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"};
+  String wk[7] = {"Domenica","Lunedi'","Martedi'","Mercoledi'","Giovedi'","Venerdi'","Sabato"};
   String s = wk[weekday()-1];
   return s;
 }
 
 //月日
 String monthDay(){
-  String s =  String(day());
-  s = s + "/" + month();
+  String s = String(day());
+  String y = String(year());
+  y.remove(0, 2);
+  s = s + "/" + month() + "/" + y;
   return s;
 }
 //时分
@@ -719,11 +718,11 @@ void printDigits(int digits)
 
 
 
-//NTP部分的代码,包含2个函数------------------------------------------------------------
+//NTP Part of the code, including 2 functions------------------------------------------------------------
 
 /*-------- NTP code ----------*/
 
-const int NTP_PACKET_SIZE = 48; // NTP时间在消息的前48字节中
+const int NTP_PACKET_SIZE = 48; // NTP The time is in the first 48 bytes of the message
 byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
 
 time_t getNtpTime()
@@ -751,7 +750,7 @@ time_t getNtpTime()
       secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
       secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
       secsSince1900 |= (unsigned long)packetBuffer[43];
-      //Serial.println(secsSince1900 - 2208988800UL + timeZone * SECS_PER_HOUR);
+      Serial.println(secsSince1900 - 2208988800UL + timeZone * SECS_PER_HOUR);
       return secsSince1900 - 2208988800UL + timeZone * SECS_PER_HOUR;
     }
   }
@@ -760,7 +759,7 @@ time_t getNtpTime()
   return 0; // 无法获取时间时返回0
 }
 
-// 向NTP服务器发送请求
+// Send request to NTP server
 void sendNTPpacket(IPAddress &address)
 {
   // set all bytes in the buffer to 0
